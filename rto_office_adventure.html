@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTO Adventure - Regreso a la Oficina</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #gameCanvas {
+            display: block;
+        }
+
+        #ui {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            color: white;
+            font-size: 18px;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+            z-index: 100;
+            background: rgba(0,0,0,0.6);
+            padding: 20px;
+            border-radius: 15px;
+            border: 3px solid #4CAF50;
+            backdrop-filter: blur(10px);
+        }
+
+        #ui div {
+            margin: 8px 0;
+            font-weight: bold;
+        }
+
+        #countdown {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255,87,51,0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            border: 3px solid #ff3d00;
+            box-shadow: 0 0 30px rgba(255,87,51,0.6);
+            animation: urgentPulse 2s infinite;
+            z-index: 100;
+        }
+
+        @keyframes urgentPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(255,87,51,0.9); }
+        }
+
+        #instructions {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(240,240,255,0.98));
+            padding: 40px;
+            border-radius: 25px;
+            text-align: center;
+            box-shadow: 0 0 60px rgba(102,126,234,0.8);
+            z-index: 1000;
+            max-width: 700px;
+            border: 4px solid #667eea;
+        }
+
+        #instructions h1 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 36px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #instructions h2 {
+            color: #764ba2;
+            margin: 25px 0 15px 0;
+            font-size: 22px;
+        }
+
+        #instructions p {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        #startButton {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 30px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            text-transform: uppercase;
+            box-shadow: 0 5px 20px rgba(76,175,80,0.4);
+            margin-top: 20px;
+        }
+
+        #startButton:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 30px rgba(76,175,80,0.6);
+        }
+
+        #victoryMessage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 50px;
+            border-radius: 25px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            box-shadow: 0 0 80px rgba(56,239,125,0.8);
+            z-index: 1000;
+            display: none;
+            border: 4px solid white;
+        }
+
+        #gameOverMessage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            color: white;
+            padding: 50px;
+            border-radius: 25px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            box-shadow: 0 0 80px rgba(235,51,73,0.8);
+            z-index: 1000;
+            display: none;
+            border: 4px solid white;
+        }
+
+        .message-subtitle {
+            font-size: 18px;
+            margin-top: 20px;
+            opacity: 0.9;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+        }
+
+        .control-btn {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(240,240,255,0.9));
+            border: 3px solid #667eea;
+            border-radius: 15px;
+            padding: 18px 25px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #667eea;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(102,126,234,0.4);
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                bottom: 10px;
+            }
+            .control-btn {
+                padding: 15px 20px;
+                font-size: 16px;
+            }
+            #instructions {
+                padding: 25px;
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="ui">
+            <div>🏢 PROGRESO: <span id="score">0</span>%</div>
+            <div>☕ ENERGÍA: <span id="lives">3</span></div>
+            <div>📍 CIUDAD: <span id="city">BOG</span></div>
+            <div>👔 ROL: <span id="role">EQUIPO</span></div>
+        </div>
+
+        <div id="countdown">
+            ⏰ REUNIÓN EN:<br>
+            <span id="timeLeft">60</span>s
+        </div>
+
+        <div id="instructions">
+            <h1>🏢 RTO ADVENTURE 2026</h1>
+            <h2>🎯 LA MISIÓN</h2>
+            <p>¡Es día de RTO (Return to Office)! Debes llegar a la oficina sorteando todos los obstáculos urbanos antes de que empiece la reunión importante.</p>
+            
+            <h2>📅 POLÍTICA RTO 2026</h2>
+            <p><span class="highlight">MANAGERS</span>: 2 veces al mes 👔</p>
+            <p><span class="highlight">EQUIPO</span>: 1 vez al mes 💼</p>
+            
+            <h2>🌎 OFICINAS PGD</h2>
+            <p>🇨🇴 Bogotá (COL) | 🇨🇷 San José (CR) | 🇵🇪 Lima (PER)</p>
+            
+            <h2>🎮 CONTROLES</h2>
+            <p>← → Moverse | ↑ Saltar | Espacio Saltar</p>
+            
+            <h2>📋 RECOLECTA</h2>
+            <p>☕ <strong>Café</strong> - Recupera energía<br>
+            💻 <strong>Laptop</strong> - Importante para trabajar<br>
+            📱 <strong>Workspace</strong> - ¡No olvides reservar tu puesto!<br>
+            🎫 <strong>Pase de acceso</strong> - Esencial para entrar</p>
+            
+            <h2>⚠️ EVITA</h2>
+            <p>🚗 Tráfico | 🚧 Obras en construcción | 📧 Emails urgentes voladores<br>
+            ☔ Lluvia | 🚌 Buses demorados</p>
+            
+            <button id="startButton">¡Iniciar Jornada Laboral!</button>
+            
+            <p style="margin-top: 20px; font-size: 14px; color: #666;">
+                🔗 Recuerda reservar en: <span class="highlight">workspace.marcel.ai</span>
+            </p>
+        </div>
+
+        <div id="victoryMessage">
+            🎉 ¡LLEGASTE A TIEMPO! 🎉<br>
+            <div class="message-subtitle">
+                ✅ Puesto reservado en Workspace<br>
+                ✅ Laptop lista<br>
+                ✅ Café en mano<br>
+                ¡Excelente día de RTO!
+            </div>
+        </div>
+
+        <div id="gameOverMessage">
+            😰 ¡OH NO! 😰<br>
+            <div class="message-subtitle">
+                No llegaste a tiempo...<br>
+                Recuerda respetar las fechas RTO 2026<br>
+                ¡Inténtalo de nuevo! 💪
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" id="leftBtn">⬅️</button>
+            <button class="control-btn" id="jumpBtn">⬆️</button>
+            <button class="control-btn" id="rightBtn">➡️</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Variables del juego
+        const game = {
+            started: false,
+            startTime: Date.now(),
+            score: 0,
+            lives: 3,
+            gravity: 0.7,
+            platforms: [],
+            collectibles: [],
+            obstacles: [],
+            particles: [],
+            clouds: [],
+            buildings: [],
+            timeLimit: 60,
+            distanceTraveled: 0,
+            targetDistance: 2000,
+            isManager: Math.random() > 0.5,
+            city: ['BOG', 'CR', 'PER'][Math.floor(Math.random() * 3)],
+            hasLaptop: false,
+            hasWorkspace: false,
+            hasCoffee: false,
+            hasPass: false
+        };
+
+        // Items importantes para la oficina
+        const officeItems = {
+            laptop: { emoji: '💻', name: 'LAPTOP', color: '#2196F3' },
+            workspace: { emoji: '📱', name: 'WORKSPACE', color: '#9C27B0' },
+            coffee: { emoji: '☕', name: 'CAFÉ', color: '#795548' },
+            pass: { emoji: '🎫', name: 'PASE', color: '#FF9800' }
+        };
+
+        // Obstáculos urbanos
+        const urbanObstacles = [
+            { emoji: '🚗', name: 'TRÁFICO', width: 60, height: 40 },
+            { emoji: '🚧', name: 'OBRAS', width: 50, height: 50 },
+            { emoji: '📧', name: 'EMAIL', width: 35, height: 35 },
+            { emoji: '☔', name: 'LLUVIA', width: 30, height: 40 },
+            { emoji: '🚌', name: 'BUS', width: 70, height: 45 }
+        ];
+
+        // Jugador
+        const player = {
+            x: 100,
+            y: 400,
+            width: 40,
+            height: 50,
+            vx: 0,
+            vy: 0,
+            speed: 6,
+            jumpPower: 17,
+            onGround: false,
+            invulnerable: 0
+        };
+
+        // Controles
+        const keys = {};
+        
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // Controles táctiles
+        let touchControls = {
+            left: false,
+            right: false,
+            jump: false
+        };
+
+        document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchControls.left = true;
+            keys['ArrowLeft'] = true;
+        });
+        document.getElementById('leftBtn').addEventListener('touchend', (e) => {
+            e.preventDefault();
+            touchControls.left = false;
+            keys['ArrowLeft'] = false;
+        });
+
+        document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchControls.right = true;
+            keys['ArrowRight'] = true;
+        });
+        document.getElementById('rightBtn').addEventListener('touchend', (e) => {
+            e.preventDefault();
+            touchControls.right = false;
+            keys['ArrowRight'] = false;
+        });
+
+        document.getElementById('jumpBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchControls.jump = true;
+            keys['ArrowUp'] = true;
+        });
+        document.getElementById('jumpBtn').addEventListener('touchend', (e) => {
+            e.preventDefault();
+            touchControls.jump = false;
+            keys['ArrowUp'] = false;
+        });
+
+        document.addEventListener('touchmove', (e) => e.preventDefault(), {passive: false});
+
+        // Generar nubes
+        function generateClouds() {
+            for (let i = 0; i < 8; i++) {
+                game.clouds.push({
+                    x: Math.random() * canvas.width,
+                    y: 50 + Math.random() * 150,
+                    width: 60 + Math.random() * 40,
+                    speed: 0.3 + Math.random() * 0.5
+                });
+            }
+        }
+
+        // Generar edificios de fondo
+        function generateBuildings() {
+            for (let i = 0; i < 15; i++) {
+                game.buildings.push({
+                    x: i * 150,
+                    y: canvas.height - 150 - Math.random() * 200,
+                    width: 80 + Math.random() * 70,
+                    height: 150 + Math.random() * 200,
+                    color: `hsl(${200 + Math.random() * 40}, 40%, ${30 + Math.random() * 20}%)`,
+                    windows: []
+                });
+                
+                // Generar ventanas
+                const building = game.buildings[game.buildings.length - 1];
+                for (let w = 0; w < 20; w++) {
+                    building.windows.push({
+                        x: building.x + 10 + (w % 4) * 18,
+                        y: building.y + 20 + Math.floor(w / 4) * 25,
+                        lit: Math.random() > 0.3
+                    });
+                }
+            }
+        }
+
+        // Generar plataformas (calles y edificios)
+        function generatePlatforms() {
+            game.platforms = [];
+            
+            // Calle principal
+            game.platforms.push({
+                x: 0,
+                y: canvas.height - 60,
+                width: canvas.width * 5,
+                height: 60,
+                color: '#424242',
+                type: 'street'
+            });
+
+            // Plataformas elevadas (techos, puentes peatonales)
+            for (let i = 0; i < 25; i++) {
+                game.platforms.push({
+                    x: 200 + i * 180,
+                    y: canvas.height - 150 - Math.random() * 250,
+                    width: 120 + Math.random() * 100,
+                    height: 20,
+                    color: ['#607D8B', '#546E7A', '#78909C'][Math.floor(Math.random() * 3)],
+                    type: 'platform'
+                });
+            }
+        }
+
+        // Generar coleccionables
+        function generateCollectibles() {
+            game.collectibles = [];
+            
+            const items = ['laptop', 'workspace', 'coffee', 'pass'];
+            const itemsToGenerate = [...items];
+            
+            // Items esenciales
+            itemsToGenerate.forEach((itemType, index) => {
+                const platform = game.platforms[2 + index * 5];
+                if (platform) {
+                    const item = officeItems[itemType];
+                    game.collectibles.push({
+                        x: platform.x + Math.random() * (platform.width - 50),
+                        y: platform.y - 40,
+                        width: 40,
+                        height: 40,
+                        type: itemType,
+                        emoji: item.emoji,
+                        name: item.name,
+                        color: item.color,
+                        bounce: Math.random() * Math.PI,
+                        collected: false
+                    });
+                }
+            });
+            
+            // Cafés extra para energía
+            for (let i = 0; i < 8; i++) {
+                const platform = game.platforms[5 + Math.floor(Math.random() * 15)];
+                if (platform) {
+                    game.collectibles.push({
+                        x: platform.x + Math.random() * (platform.width - 50),
+                        y: platform.y - 40,
+                        width: 35,
+                        height: 35,
+                        type: 'energy',
+                        emoji: '☕',
+                        name: 'ENERGÍA',
+                        color: '#8D6E63',
+                        bounce: Math.random() * Math.PI,
+                        collected: false
+                    });
+                }
+            }
+        }
+
+        // Generar obstáculos
+        function generateObstacles() {
+            game.obstacles = [];
+            
+            for (let i = 0; i < 20; i++) {
+                const platform = game.platforms[1 + Math.floor(Math.random() * (game.platforms.length - 1))];
+                const obstacleType = urbanObstacles[Math.floor(Math.random() * urbanObstacles.length)];
+                
+                if (platform) {
+                    game.obstacles.push({
+                        x: platform.x + Math.random() * (platform.width - obstacleType.width),
+                        y: platform.y - obstacleType.height,
+                        width: obstacleType.width,
+                        height: obstacleType.height,
+                        emoji: obstacleType.emoji,
+                        name: obstacleType.name,
+                        vx: (Math.random() - 0.5) * 1.5,
+                        platform: platform,
+                        bounce: 0
+                    });
+                }
+            }
+        }
+
+        // Dibujar jugador (oficinista)
+        function drawPlayer() {
+            if (player.invulnerable > 0 && Math.floor(player.invulnerable / 5) % 2 === 0) {
+                return;
+            }
+
+            // Cuerpo (traje)
+            const gradient = ctx.createLinearGradient(player.x, player.y, player.x, player.y + player.height);
+            gradient.addColorStop(0, '#1976D2');
+            gradient.addColorStop(1, '#0D47A1');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(player.x + 8, player.y + 18, player.width - 16, player.height - 18);
+            
+            // Cabeza
+            ctx.fillStyle = '#FFD7BA';
+            ctx.beginPath();
+            ctx.arc(player.x + player.width/2, player.y + 10, 12, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Cabello
+            ctx.fillStyle = '#3E2723';
+            ctx.beginPath();
+            ctx.arc(player.x + player.width/2, player.y + 6, 13, Math.PI, Math.PI * 2);
+            ctx.fill();
+            
+            // Ojos
+            ctx.fillStyle = '#000';
+            ctx.fillRect(player.x + 14, player.y + 8, 3, 3);
+            ctx.fillRect(player.x + 23, player.y + 8, 3, 3);
+            
+            // Sonrisa
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(player.x + player.width/2, player.y + 12, 5, 0, Math.PI);
+            ctx.stroke();
+            
+            // Corbata
+            ctx.fillStyle = '#C62828';
+            ctx.fillRect(player.x + player.width/2 - 3, player.y + 20, 6, 15);
+            
+            // Brazos
+            ctx.fillStyle = '#1565C0';
+            ctx.fillRect(player.x + 2, player.y + 25, 6, 18);
+            ctx.fillRect(player.x + player.width - 8, player.y + 25, 6, 18);
+            
+            // Maletín
+            if (game.hasLaptop) {
+                ctx.fillStyle = '#6D4C41';
+                ctx.fillRect(player.x - 8, player.y + 30, 12, 10);
+                ctx.fillStyle = '#FFD700';
+                ctx.fillRect(player.x - 6, player.y + 33, 2, 2);
+            }
+            
+            // Indicador de café
+            if (game.hasCoffee) {
+                ctx.font = '16px Arial';
+                ctx.fillText('☕', player.x + player.width + 5, player.y + 15);
+            }
+        }
+
+        // Dibujar edificios de fondo
+        function drawBuildings() {
+            game.buildings.forEach(building => {
+                building.x -= 0.5;
+                if (building.x + building.width < 0) {
+                    building.x = canvas.width;
+                }
+                
+                // Edificio
+                ctx.fillStyle = building.color;
+                ctx.fillRect(building.x, building.y, building.width, building.height);
+                
+                // Ventanas
+                building.windows.forEach(window => {
+                    ctx.fillStyle = window.lit ? '#FFE082' : '#424242';
+                    ctx.fillRect(window.x - (building.x - building.x), window.y, 12, 15);
+                });
+                
+                // Techo
+                ctx.fillStyle = '#37474F';
+                ctx.fillRect(building.x, building.y - 10, building.width, 10);
+            });
+        }
+
+        // Dibujar nubes
+        function drawClouds() {
+            game.clouds.forEach(cloud => {
+                cloud.x += cloud.speed;
+                if (cloud.x > canvas.width) {
+                    cloud.x = -cloud.width;
+                }
+                
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.beginPath();
+                ctx.arc(cloud.x, cloud.y, cloud.width/3, 0, Math.PI * 2);
+                ctx.arc(cloud.x + cloud.width/3, cloud.y - 5, cloud.width/2.5, 0, Math.PI * 2);
+                ctx.arc(cloud.x + cloud.width/1.5, cloud.y, cloud.width/3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // Dibujar plataformas
+        function drawPlatforms() {
+            const scroll = game.distanceTraveled;
+            
+            game.platforms.forEach(platform => {
+                const drawX = platform.x - scroll;
+                
+                if (drawX + platform.width < -100 || drawX > canvas.width + 100) return;
+                
+                if (platform.type === 'street') {
+                    // Calle con líneas
+                    ctx.fillStyle = platform.color;
+                    ctx.fillRect(drawX, platform.y, platform.width, platform.height);
+                    
+                    // Líneas amarillas
+                    ctx.strokeStyle = '#FDD835';
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([20, 15]);
+                    ctx.beginPath();
+                    ctx.moveTo(drawX, platform.y + 30);
+                    ctx.lineTo(drawX + platform.width, platform.y + 30);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    
+                    // Acera
+                    ctx.fillStyle = '#757575';
+                    ctx.fillRect(drawX, platform.y, platform.width, 10);
+                } else {
+                    // Plataforma elevada
+                    ctx.fillStyle = platform.color;
+                    ctx.fillRect(drawX, platform.y, platform.width, platform.height);
+                    
+                    // Borde metálico
+                    ctx.fillStyle = '#90A4AE';
+                    ctx.fillRect(drawX, platform.y, platform.width, 3);
+                    
+                    // Sombra
+                    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                    ctx.fillRect(drawX, platform.y + platform.height, platform.width, 5);
+                }
+            });
+        }
+
+        // Dibujar coleccionables
+        function drawCollectibles() {
+            const scroll = game.distanceTraveled;
+            
+            game.collectibles.forEach(item => {
+                if (item.collected) return;
+                
+                const drawX = item.x - scroll;
+                if (drawX + item.width < -50 || drawX > canvas.width + 50) return;
+                
+                item.bounce += 0.1;
+                const bounceY = item.y + Math.sin(item.bounce) * 8;
+                
+                // Fondo del item
+                ctx.fillStyle = item.color;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = item.color;
+                ctx.fillRect(drawX, bounceY, item.width, item.height);
+                ctx.shadowBlur = 0;
+                
+                // Emoji
+                ctx.font = '30px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(item.emoji, drawX + item.width/2, bounceY + item.height/2 + 10);
+                
+                // Etiqueta
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 10px Arial';
+                ctx.fillText(item.name, drawX + item.width/2, bounceY - 5);
+                
+                // Brillo
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(drawX - 2, bounceY - 2, item.width + 4, item.height + 4);
+            });
+        }
+
+        // Dibujar obstáculos
+        function drawObstacles() {
+            const scroll = game.distanceTraveled;
+            
+            game.obstacles.forEach(obstacle => {
+                const drawX = obstacle.x - scroll;
+                if (drawX + obstacle.width < -50 || drawX > canvas.width + 50) return;
+                
+                obstacle.bounce += 0.05;
+                
+                // Sombra de peligro
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+                ctx.fillRect(drawX - 5, obstacle.y - 5, obstacle.width + 10, obstacle.height + 10);
+                
+                // Emoji del obstáculo
+                ctx.font = `${obstacle.height}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.fillText(obstacle.emoji, drawX + obstacle.width/2, obstacle.y + obstacle.height - 5);
+                
+                // Etiqueta de advertencia
+                ctx.fillStyle = '#F44336';
+                ctx.font = 'bold 9px Arial';
+                ctx.fillText('⚠️' + obstacle.name, drawX + obstacle.width/2, obstacle.y - 8);
+            });
+        }
+
+        // Crear partículas
+        function createParticles(x, y, color, count = 15) {
+            for (let i = 0; i < count; i++) {
+                game.particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: Math.random() * -8 - 2,
+                    color: color,
+                    life: 60,
+                    size: 3 + Math.random() * 5
+                });
+            }
+        }
+
+        // Dibujar partículas
+        function drawParticles() {
+            game.particles.forEach((particle, index) => {
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                particle.vy += 0.3;
+                particle.life--;
+                
+                if (particle.life <= 0) {
+                    game.particles.splice(index, 1);
+                    return;
+                }
+                
+                ctx.fillStyle = particle.color;
+                ctx.globalAlpha = particle.life / 60;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            });
+        }
+
+        // Verificar colisiones
+        function checkCollisions() {
+            const scroll = game.distanceTraveled;
+            player.onGround = false;
+            
+            // Colisión con plataformas
+            game.platforms.forEach(platform => {
+                const drawX = platform.x - scroll;
+                
+                if (player.x < drawX + platform.width &&
+                    player.x + player.width > drawX &&
+                    player.y < platform.y + platform.height &&
+                    player.y + player.height > platform.y) {
+                    
+                    if (player.vy > 0) {
+                        player.y = platform.y - player.height;
+                        player.vy = 0;
+                        player.onGround = true;
+                    }
+                }
+            });
+
+            // Colisión con coleccionables
+            game.collectibles.forEach(item => {
+                if (item.collected) return;
+                
+                const drawX = item.x - scroll;
+                
+                if (player.x < drawX + item.width &&
+                    player.x + player.width > drawX &&
+                    player.y < item.y + item.height &&
+                    player.y + player.height > item.y) {
+                    
+                    createParticles(drawX + item.width/2, item.y + item.height/2, item.color, 20);
+                    item.collected = true;
+                    
+                    if (item.type === 'laptop') {
+                        game.hasLaptop = true;
+                        game.score += 25;
+                    } else if (item.type === 'workspace') {
+                        game.hasWorkspace = true;
+                        game.score += 25;
+                    } else if (item.type === 'pass') {
+                        game.hasPass = true;
+                        game.score += 25;
+                    } else if (item.type === 'coffee') {
+                        game.hasCoffee = true;
+                        game.score += 25;
+                    } else if (item.type === 'energy') {
+                        if (game.lives < 3) game.lives++;
+                    }
+                }
+            });
+
+            // Colisión con obstáculos
+            if (player.invulnerable <= 0) {
+                game.obstacles.forEach(obstacle => {
+                    const drawX = obstacle.x - scroll;
+                    
+                    if (player.x < drawX + obstacle.width &&
+                        player.x + player.width > drawX &&
+                        player.y < obstacle.y + obstacle.height &&
+                        player.y + player.height > obstacle.y) {
+                        
+                        createParticles(player.x + player.width/2, player.y + player.height/2, '#F44336', 25);
+                        game.lives--;
+                        player.invulnerable = 90;
+                        
+                        if (game.lives <= 0) {
+                            endGame(false);
+                        }
+                    }
+                });
+            }
+        }
+
+        // Actualizar obstáculos
+        function updateObstacles() {
+            game.obstacles.forEach(obstacle => {
+                obstacle.x += obstacle.vx;
+                
+                if (obstacle.x <= obstacle.platform.x) {
+                    obstacle.x = obstacle.platform.x;
+                    obstacle.vx = Math.abs(obstacle.vx);
+                }
+                if (obstacle.x + obstacle.width >= obstacle.platform.x + obstacle.platform.width) {
+                    obstacle.x = obstacle.platform.x + obstacle.platform.width - obstacle.width;
+                    obstacle.vx = -Math.abs(obstacle.vx);
+                }
+            });
+        }
+
+        // Actualizar juego
+        function updateGame() {
+            if (!game.started) return;
+
+            // Controles
+            if (keys['ArrowLeft'] || keys['a']) {
+                player.vx = -player.speed;
+            } else if (keys['ArrowRight'] || keys['d']) {
+                player.vx = player.speed;
+                game.distanceTraveled += 3;
+            } else {
+                player.vx *= 0.85;
+            }
+
+            if ((keys['ArrowUp'] || keys['w'] || keys[' ']) && player.onGround) {
+                player.vy = -player.jumpPower;
+                player.onGround = false;
+            }
+
+            // Física
+            player.x += player.vx;
+            player.y += player.vy;
+            player.vy += game.gravity;
+
+            // Límites
+            if (player.x < 50) player.x = 50;
+            if (player.x + player.width > canvas.width - 50) player.x = canvas.width - player.width - 50;
+            
+            if (player.y > canvas.height) {
+                game.lives--;
+                if (game.lives <= 0) {
+                    endGame(false);
+                } else {
+                    player.y = 100;
+                    player.vy = 0;
+                }
+            }
+
+            if (player.invulnerable > 0) player.invulnerable--;
+
+            updateObstacles();
+            checkCollisions();
+            
+            // Calcular progreso
+            const progress = Math.min(100, Math.floor((game.distanceTraveled / game.targetDistance) * 100));
+            game.score = Math.max(game.score, progress);
+            
+            // Victoria si tiene todos los items y llegó a la meta
+            if (game.distanceTraveled >= game.targetDistance && 
+                game.hasLaptop && game.hasWorkspace && game.hasPass && game.hasCoffee) {
+                endGame(true);
+            }
+
+            updateUI();
+        }
+
+        // Actualizar UI
+        function updateUI() {
+            document.getElementById('score').textContent = game.score;
+            document.getElementById('lives').textContent = game.lives;
+            document.getElementById('city').textContent = game.city;
+            document.getElementById('role').textContent = game.isManager ? 'MANAGER' : 'EQUIPO';
+            
+            const timeElapsed = Math.floor((Date.now() - game.startTime) / 1000);
+            const timeLeft = Math.max(0, game.timeLimit - timeElapsed);
+            document.getElementById('timeLeft').textContent = timeLeft;
+            
+            if (timeLeft <= 0 && game.started) {
+                endGame(false);
+            }
+        }
+
+        // Terminar juego
+        function endGame(victory) {
+            game.started = false;
+            if (victory) {
+                document.getElementById('victoryMessage').style.display = 'block';
+            } else {
+                document.getElementById('gameOverMessage').style.display = 'block';
+            }
+        }
+
+        // Resetear juego
+        function resetGame() {
+            game.started = false;
+            game.score = 0;
+            game.lives = 3;
+            game.startTime = Date.now();
+            game.distanceTraveled = 0;
+            game.hasLaptop = false;
+            game.hasWorkspace = false;
+            game.hasCoffee = false;
+            game.hasPass = false;
+            game.isManager = Math.random() > 0.5;
+            game.city = ['BOG', 'CR', 'PER'][Math.floor(Math.random() * 3)];
+            player.x = 100;
+            player.y = 400;
+            player.vx = 0;
+            player.vy = 0;
+            player.invulnerable = 0;
+            game.particles = [];
+            document.getElementById('instructions').style.display = 'block';
+            document.getElementById('victoryMessage').style.display = 'none';
+            document.getElementById('gameOverMessage').style.display = 'none';
+            generateClouds();
+            generateBuildings();
+            generatePlatforms();
+            generateCollectibles();
+            generateObstacles();
+        }
+
+        // Bucle principal
+        function gameLoop() {
+            // Fondo - cielo de ciudad
+            const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            skyGradient.addColorStop(0, '#87CEEB');
+            skyGradient.addColorStop(0.6, '#B0E0E6');
+            skyGradient.addColorStop(1, '#E0F6FF');
+            ctx.fillStyle = skyGradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            drawClouds();
+            drawBuildings();
+            
+            if (game.started) {
+                drawPlatforms();
+                drawObstacles();
+                drawCollectibles();
+                drawPlayer();
+                drawParticles();
+                updateGame();
+                
+                // Indicadores de items recolectados
+                const itemsY = canvas.height - 120;
+                ctx.font = '24px Arial';
+                ctx.fillText(game.hasLaptop ? '💻✓' : '💻✗', 20, itemsY);
+                ctx.fillText(game.hasWorkspace ? '📱✓' : '📱✗', 70, itemsY);
+                ctx.fillText(game.hasPass ? '🎫✓' : '🎫✗', 120, itemsY);
+                ctx.fillText(game.hasCoffee ? '☕✓' : '☕✗', 170, itemsY);
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Iniciar juego
+        document.getElementById('startButton').addEventListener('click', () => {
+            game.started = true;
+            game.startTime = Date.now();
+            document.getElementById('instructions').style.display = 'none';
+        });
+
+        // Click para reiniciar
+        document.getElementById('gameOverMessage').addEventListener('click', () => {
+            resetGame();
+        });
+
+        document.getElementById('victoryMessage').addEventListener('click', () => {
+            resetGame();
+        });
+
+        // Inicializar
+        resetGame();
+        gameLoop();
+    </script>
+</body>
+</html>
